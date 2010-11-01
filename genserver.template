@@ -1,0 +1,2 @@
+{variables, [{srvid, "myserver"}, {author, "Ulf Angermann"}, {date,""}, {email, "uangermann@googlemail.com"}]}.
+{template, "genserver.erl", "src/{{srvid}}.erl"}.
