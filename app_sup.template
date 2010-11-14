@@ -1,0 +1,2 @@
+{variables, [{module, ""}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}]}.
+{template, "app_sup.erl", "src/{{module}}.erl"}.
