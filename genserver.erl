@@ -1,9 +1,3 @@
-%%% -------------------------------------------------------------------
-%%% Author  : {{author}} {{email}}
-%%% Description :
-%%%
-%%% Created : {{date}}
-%%% -------------------------------------------------------------------
 %% Copyright 2010 {{author}}
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +12,12 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
+%%% -------------------------------------------------------------------
+%%% Author  : {{author}} {{email}}
+%%% Description :
+%%%
+%%% Created : {{date}}
+%%% -------------------------------------------------------------------
 -module({{srvid}}).
 
 -behaviour(gen_server).
