@@ -18,16 +18,16 @@
 %%%
 %%% Created : {{date}}
 %%% -------------------------------------------------------------------
--module({{module}}).
+-module({{appid}}_resource).
 
-%% --------------------------------------------------------------------
-%% Include files
-%% --------------------------------------------------------------------
--include_lib("../deps/webmachine/include/webmachine.hrl").
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
 -export([init/1, to_html/2, content_types_provided/2, allowed_methods/2, resource_exists/2]).
+%% --------------------------------------------------------------------
+%% Include files
+%% --------------------------------------------------------------------
+-include_lib("../deps/webmachine/include/webmachine.hrl").
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
@@ -36,7 +36,6 @@
 %%% Internal functions
 %% --------------------------------------------------------------------
 init(_Config) -> 
-%% 	{{trace, "/tmp"}, #context{}}.
 	{ok, #context{}}.
 %
 % Returning non-true values will result in 404 Not Found.
@@ -92,7 +91,7 @@ valid_content_headers(ReqData, Context) ->
 % will be sent. Note that these are all-caps and are atoms. (single-quoted)
 %
 allowed_methods(ReqData, Context) ->
-    {[], ReqData, Context}.
+    {['GET'], ReqData, Context}.
 %
 % This is called when a DELETE request should be enacted 
 % and should return true if the deletion succeeded.
@@ -197,12 +196,12 @@ moved_permanently(ReqData, Context) ->
 moved_temporarily(ReqData, Context) ->
 	{false, ReqData, Context}.
 %
-% undefined | {{YYYY,MM,DD}, {Hour,Min,Sec}} 
+% undefined | YYYY,MM,DD, Hour,Min,Sec
 %
 last_modified(ReqData, Context) ->
 	{undefined, ReqData, Context}.
 %
-% undefined | {{YYYY,MM,DD}, {Hour,Min,Sec}} 
+% undefined | YYYY,MM,DD, Hour,Min,Sec 
 %
 expires(ReqData, Context) ->
 	{undefined, ReqData, Context}.
@@ -221,7 +220,7 @@ finish_request(ReqData, Context) ->
 %%% Additional functions
 %% --------------------------------------------------------------------
 to_html(ReqData, Context) ->
-     {io_lib:format("<html><body>~s</body><html>", "Hallo Template"), ReqData, Context}.
+    {io_lib:format("<html><body>~s</body><html>", [erlang:iolist_to_binary("Hello Template")]), ReqData, Context}.
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------

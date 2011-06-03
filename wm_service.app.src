@@ -1,0 +1,15 @@
+{application, {{appid}}_service,
+ [
+  {description, ""},
+  {vsn, "0.1.0"},
+  {modules, [
+  			{{appid}}_resource
+  			]},
+  {registered, [{{appid}}_service]},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { {{appid}}_service, []}},
+  {env, []}
+ ]}.
