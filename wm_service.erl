@@ -1,4 +1,10 @@
-%% Copyright 2010 {{author}}
+%%% -------------------------------------------------------------------
+%%% Author  :{{author}}
+%%% Description :
+%%%
+%%% Created : 
+%%% -------------------------------------------------------------------
+%% Copyright 2011 {{author}}
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -11,31 +17,29 @@
 %% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
-
-%%% -------------------------------------------------------------------
-%%% Author  : {{author}} {{email}}
-%%% Description :
-%%%
-%%% Created : {{date}}
-%%% -------------------------------------------------------------------
--module({{module}}).
+-module({{appid}}_service).
 
 -behaviour(application).
 -behaviour(supervisor).
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
-
 %% --------------------------------------------------------------------
 %% Behavioural exports
 %% --------------------------------------------------------------------
 -export([start/0, start/2, stop/0, stop/1, restart/0]).
 -export([init/1, start_link/2]).
-
 %% --------------------------------------------------------------------
 %% Internal exports
 %% --------------------------------------------------------------------
-
+%% @spec ensure_started(App::atom()) -> ok
+ensure_started(App) ->
+    case application:start(App) of
+        ok ->
+            ok;
+        {error, {already_started, App}} ->
+            ok
+    end.
 %% --------------------------------------------------------------------
 %% API Functions
 %% --------------------------------------------------------------------
@@ -50,7 +54,21 @@
 %%          {error, Reason}
 %% --------------------------------------------------------------------
 init([]) ->
-ok.
+	Ip = case os:getenv("WEBMACHINE_IP") of false -> "0.0.0.0"; Any -> Any end,
+    {ok, Dispatch} = file:consult(filename:join([code:priv_dir(?MODULE), "dispatch.conf"])),	
+	WebConfig = [
+                 {ip, Ip},
+                 {backlog, 1000},
+                 {port, {{port}} },
+                 {log_dir, "log/weblog"},
+                 {dispatch, Dispatch}],
+    Web = {webmachine_mochiweb,
+           {webmachine_mochiweb, start, [WebConfig]},
+           permanent, 5000, worker, dynamic},
+		{ok, { {one_for_one, 3, 10},
+		   [
+			Web
+		]}}.
 %% ====================================================================!
 %% External functions
 %% ====================================================================!
@@ -61,6 +79,9 @@ ok.
 %%          {error, Reason}
 %% --------------------------------------------------------------------
 start() ->
+	ensure_started(crypto),
+	ensure_started(mnesia),
+    ensure_started(webmachine),
 	application:start(?MODULE).
 
 start_link(_Type, _Args) ->
@@ -72,18 +93,25 @@ start_link(_Type, _Args) ->
 %%          {error, Reason}
 %% --------------------------------------------------------------------
 start(_Type, _Args) ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+	ensure_started(crypto),
+	ensure_started(mnesia),
+    ensure_started(webmachine),	
+	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 %% --------------------------------------------------------------------
 %% Func: stop/0
 %% Returns: any
 %% --------------------------------------------------------------------
 stop() ->
+	application:stop(crypto),
+	application:stop(webmachine),
+	application:stop(mnesia),
     application:stop(?MODULE).
 %% --------------------------------------------------------------------
 %% Func: stop/1
 %% Returns: any
 %% --------------------------------------------------------------------
 stop(_State) ->
+	stop(),
     ok.
 %% --------------------------------------------------------------------
 %% Func: restart/0

@@ -1,0 +1,2 @@
+{variables, [{appid, ""}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}]}.
+{template, "wm_resource.erl", "src/{{module}}_resource.erl"}.

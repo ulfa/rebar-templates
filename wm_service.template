@@ -1,0 +1,8 @@
+{variables, [{appid, "myapp"}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}, {port, 8000}]}.
+{template, "rebar.config", "rebar.config"}.
+{template, "wm_service.app.src", "src/{{appid}}_service.app.src"}.
+{template, "dispatch.conf", "priv/dispatch.conf"}.
+{template, "wm_resource.erl", "src/{{appid}}_resource.erl"}.
+{template, "wm_service.erl", "src/{{appid}}_service.erl"}.
+{template, "start.sh", "start.sh"}.
+
