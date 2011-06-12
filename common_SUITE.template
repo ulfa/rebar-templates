@@ -1,2 +1,2 @@
-{variables, [{module, ""}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}]}.
-{template, "common_SUITE.erl", "test/{{module}}_SUITE.erl"}.
+{variables, [{appid, ""}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}]}.
+{template, "common_SUITE.erl", "test/{{appid}}_SUITE.erl"}.
