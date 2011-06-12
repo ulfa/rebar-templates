@@ -5,4 +5,9 @@
 {template, "wm_resource.erl", "src/{{appid}}_resource.erl"}.
 {template, "wm_service.erl", "src/{{appid}}_service.erl"}.
 {template, "start.sh", "start.sh"}.
-
+{template, "test.sh", "test.sh"}.
+{chmod, 8#744, "start.sh"}.
+{chmod, 8#744, "test.sh"}.
+{template, "test.spec.in", "test/test.spec.in"}.
+{template, "install.sh", "install.sh"}.
+{template, "common_SUITE.erl", "test/{{appid}}_SUITE.erl"}.
