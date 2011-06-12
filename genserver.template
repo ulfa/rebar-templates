@@ -1,2 +1,2 @@
-{variables, [{srvid, "myserver"}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}]}.
+{variables, [{srvid, "myserver"}, {author, "Ulf Angermann"}, {date,""}, {email, "uaforum1@googlemail.com"}]}.
 {template, "genserver.erl", "src/{{srvid}}.erl"}.

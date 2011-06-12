@@ -1,2 +1,2 @@
-{variables, [{modul, "mymodul"}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}]}.
+{variables, [{modul, "mymodul"}, {author, "Ulf Angermann"}, {date,""}, {email, "uaforum1@googlemail.com"}]}.
 {template, "modul.erl", "src/{{modul}}.erl"}.
