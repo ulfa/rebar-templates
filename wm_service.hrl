@@ -1,0 +1,1 @@
+-record({{entity}}, {id, created, lastmodified, version, data}).
