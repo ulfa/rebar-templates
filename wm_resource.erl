@@ -84,6 +84,7 @@ valid_entity_length(ReqData, Context) ->
 %
 options(ReqData, Context) ->
 	{[], ReqData, Context}.
+
 valid_content_headers(ReqData, Context) ->
 	{true, ReqData, Context}.
 %
