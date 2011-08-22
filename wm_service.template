@@ -1,4 +1,4 @@
-{variables, [{appid, "myapp"}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}, {port, 8000}]}.
+{variables, [{appid, "myapp"}, {author, "Ulf"}, {date,""}, {email, "uaforum1@googlemail.com"}, {port, 8000},  {entity, ""}]}.
 {template, "rebar.config", "rebar.config"}.
 {template, "wm_service.app.src", "src/{{appid}}_service.app.src"}.
 {template, "dispatch.conf", "priv/dispatch.conf"}.
@@ -11,3 +11,6 @@
 {template, "test.spec.in", "test/test.spec.in"}.
 {template, "install.sh", "install.sh"}.
 {template, "common_SUITE.erl", "test/{{appid}}_SUITE.erl"}.
+{template, "entity_resource.erl", "src/{{appid}}_resource.erl"}.
+{template, "entity_db.erl", "src/{{entity}}_db.erl"}.
+{template, "wm_service.hrl", "include/{{appid}}.hrl"}.

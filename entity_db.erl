@@ -18,30 +18,32 @@
 %%% Description : 
 %%% Created : 
 %%% -------------------------------------------------------------------
--module({{appid}}_db).
+-module({{entity}}_db).
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
 -include_lib("stdlib/include/qlc.hrl").
--include("../include/wurfler.hrl").
+-include("../include/{{appid}}.hrl").
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
 -export([create_db/0]).
--export([create/1, update/1, delete/1, find_by_id/1]).
+-export([create/1, update/1, delete/1, find_by_id/1, find_free_id/1]).
 
 create_db() ->
 	case mnesia:create_schema([node()]) of 
 		{error, Reason} -> error_logger:info_msg(Reason),
 						   false;
 		_ -> application:start(mnesia),
-			 mnesia:create_table({{entity}},[{disc_copies, [node()]}, {attributes, record_info(fields, {{entity}})}]).
+			 mnesia:create_table({{entity}},[{disc_copies, [node()]}, {attributes, record_info(fields, {{entity}})}]),
+			 mnesia:wait_for_tables([{{entity}}], 100000),
+			 application:stop(mnesia)
 	end.
 
 create(Entity) ->
 	mnesia:activity(transaction, fun() -> mnesia:write(Entity, write) end).
 
-read(Id) ->
+find_by_id(Id) ->
 	mnesia:activity(transaction, fun() -> mnesia:read(Id) end).
 
 update(Entity) ->
@@ -49,3 +51,21 @@ update(Entity) ->
 
 delete(Id) ->
 	mnesia:activity(transaction, fun() -> mnesia:delete({{entity}}, Id) end).
+
+find_free_id(Id) ->
+	case find_by_id(Id) of
+		[] -> Id;
+		_ -> find_free_id(Id, 0)
+	end.
+
+find_free_id(Id, Count) ->
+	case find_by_id(Id ++ integer_to_list(Count)) of
+		[] -> Id ++ integer_to_list(Count);
+		_ -> find_free_id(Id, Count + 1)
+	end.
+%% --------------------------------------------------------------------
+%%% Test functions
+%% --------------------------------------------------------------------
+-include_lib("eunit/include/eunit.hrl").
+-ifdef(TEST).
+-endif.

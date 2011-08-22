@@ -28,7 +28,7 @@
 %% Include files
 %% --------------------------------------------------------------------
 -include_lib("../deps/webmachine/include/webmachine.hrl").
---include("../include/{{appid}}.hrl").
+-include("../include/{{appid}}.hrl").
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
@@ -99,7 +99,10 @@ allowed_methods(ReqData, Context) ->
 % and should return true if the deletion succeeded.
 %
 delete_resource(ReqData, Context) ->
-	{false, ReqData, Context}.
+	case delete(wrq:disp_path(ReqData)) of
+		ok -> {true, ReqData, Context};
+		_ -> {false, ReqData, Context}
+	end.
 %
 % This is only called after a successful delete_resource call, and should 
 % return false if the deletion was accepted but cannot yet be guaranteed to have finished.
@@ -122,7 +125,14 @@ post_is_create(ReqData, Context) ->
 % for all subsequent resource function calls in the course of this request.
 %
 create_path(ReqData, Context) ->
-	{undefined, ReqData, Context}.
+	case wrq:get_req_header("slug", ReqData) of
+        undefined -> {euuid:random(), ReqData, Context};
+        Slug ->
+            case {{appid}}_db:find_by_id(Slug) of
+				[] -> {Slug, ReqData, Context};
+                _  -> { {{appid}}_db:find_free_id(Slug), ReqData, Context}
+            end
+    	end.
 %
 % If post_is_create returns false, then this will be called to process any POST requests. 
 % If it succeeds, it should return true.
@@ -145,7 +155,7 @@ content_types_provided(ReqData, Context) ->
 % want to use wrq:req_body(ReqData) to access the incoming request body.
 % 
 content_types_accepted(ReqData, Context) ->
-	{[], ReqData, Context}.
+	{[{"application/json", accept_content_json}, {"text/xml", accept_content_xml}, {"text/html", accept_content_html}], ReqData, Context}.
 %
 % If this is anything other than the atom no_charset, it must be a list of pairs where 
 % each pair is of the form Charset, Converter where Charset is a string naming a charset
@@ -221,11 +231,25 @@ finish_request(ReqData, Context) ->
 %% --------------------------------------------------------------------
 %%% Additional functions
 %% --------------------------------------------------------------------
+accept_content_json(ReqData, Context) ->
+	Content = wrq:req_body(ReqData),
+	{true, ReqData, Context}.
+accept_content_xml(ReqData, Context) ->
+	{true, ReqData, Context}.
+accept_content_html(ReqData, Context) ->
+	{true, ReqData, Context}.
+
 to_html(ReqData, Context) ->
     {io_lib:format("<html><body>~s</body><html>", [erlang:iolist_to_binary("Hello Template")]), ReqData, Context}.
+to_json(ReqData, Context) ->
+	{undefined,  ReqData, Context}.
+to_xml(ReqData, Context) ->
+	{undefined,  ReqData, Context}.
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
+hash_body(Body) -> 
+	mochihex:to_hex(binary_to_list(crypto:sha(Body))).
 create(Entity) ->
 	{{appid}}_db:create(Entity).
 update(Entity) ->
