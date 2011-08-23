@@ -28,7 +28,7 @@
 %% External exports
 %% --------------------------------------------------------------------
 -export([create_db/0]).
--export([create/1, update/1, delete/1, find_by_id/1, find_free_id/1]).
+-export([create/2, update/1, delete/1, find_by_id/1, find_free_id/1]).
 
 create_db() ->
 	case mnesia:create_schema([node()]) of 
@@ -40,11 +40,16 @@ create_db() ->
 			 application:stop(mnesia)
 	end.
 
-create(Entity) ->
-	mnesia:activity(transaction, fun() -> mnesia:write(Entity, write) end).
+create(json, Properties) ->
+	Entity = #{{entity}}{id=proplists:get_value("id", Properties), created = erlang:universaltime(), lastmodified = erlang:universaltime(), version = 0, data = Properties},
+	mnesia:activity(transaction, fun() -> mnesia:write({{entity}}, Entity, write) end),
+	Entity;
+
+create(xml, Entity) ->
+	mnesia:activity(transaction, fun() -> mnesia:write({{entity}}, Entity, write) end);
 
 find_by_id(Id) ->
-	mnesia:activity(transaction, fun() -> mnesia:read(Id) end).
+	mnesia:activity(transaction, fun() ->mnesia:read({{entity}}, Id)  end).
 
 update(Entity) ->
 	ok.

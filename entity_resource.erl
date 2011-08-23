@@ -24,6 +24,9 @@
 %% External exports
 %% --------------------------------------------------------------------
 -export([init/1, to_html/2, content_types_provided/2, allowed_methods/2, resource_exists/2]).
+-export([options/2, allow_missing_post/2, post_is_create/2, create_path/2]).
+-export([content_types_accepted/2, generate_etag/2]).
+-export([accept_content_json/2, accept_content_xml/2, provide_json_content/2, provide_xml_content/2]).
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
@@ -32,18 +35,22 @@
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
--record(context, {}).
+-record(context, {body}).
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
 init(_Config) -> 
-	{ok, #context{}}.
+	%%{ok, #context{}}.
+	{ {trace, "/tmp"}, #context{}}.
 %
 % Returning non-true values will result in 404 Not Found.
 % 
 resource_exists(ReqData, Context) ->
-	{true, ReqData, Context}.
-
+	case {{entity}}_db:find_by_id(wrq:disp_path(ReqData)) of 
+		[] -> {false, ReqData, Context};
+		[Entity] -> Context#context{body=Entity#{{entity}}.data}, 
+				 {true, ReqData, Context}
+	end.
 %
 % true, if the service is available
 %
@@ -65,7 +72,7 @@ forbidden(ReqData, Context) ->
 % then this should return true.
 %
 allow_missing_post(ReqData, Context) ->
-	{false, ReqData, Context}.
+	{true, ReqData, Context}.
 
 malformed_request(ReqData, Context) ->
 	{false, ReqData, Context}.
@@ -84,7 +91,7 @@ valid_entity_length(ReqData, Context) ->
 % values that should appear in the response.
 %
 options(ReqData, Context) ->
-	{[], ReqData, Context}.
+	{['GET', 'POST', 'DELETE', 'PUT'], ReqData, Context}.
 
 valid_content_headers(ReqData, Context) ->
 	{true, ReqData, Context}.
@@ -124,13 +131,13 @@ post_is_create(ReqData, Context) ->
 % That Path will replace the previous one in the return value of wrq:disp_path(ReqData) 
 % for all subsequent resource function calls in the course of this request.
 %
-create_path(ReqData, Context) ->
+create_path(ReqData, Context) ->		
 	case wrq:get_req_header("slug", ReqData) of
-        undefined -> {euuid:random(), ReqData, Context};
+        undefined -> {erlang:integer_to_list(euuid:random()), ReqData, Context};
         Slug ->
-            case {{appid}}_db:find_by_id(Slug) of
+            case {{entity}}_db:find_by_id(Slug) of
 				[] -> {Slug, ReqData, Context};
-                _  -> { {{appid}}_db:find_free_id(Slug), ReqData, Context}
+                _  -> { {{entity}}_db:find_free_id(Slug), ReqData, Context}
             end
     	end.
 %
@@ -148,14 +155,14 @@ process_post(ReqData, Context) ->
 % return tuples, then a 406 Not Acceptable will be sent.
 % 
 content_types_provided(ReqData, Context) ->
-    {[{"text/html", to_html}],ReqData, Context}.
+    {[{"application/json", provide_json_content}],ReqData, Context}.
 %
 % This is used similarly to content_types_provided, except that it is for incoming 
 % resource representations -- for example, PUT requests. Handler functions usually 
 % want to use wrq:req_body(ReqData) to access the incoming request body.
 % 
 content_types_accepted(ReqData, Context) ->
-	{[{"application/json", accept_content_json}, {"text/xml", accept_content_xml}, {"text/html", accept_content_html}], ReqData, Context}.
+	{[{"application/json", accept_content_json}], ReqData, Context}.
 %
 % If this is anything other than the atom no_charset, it must be a list of pairs where 
 % each pair is of the form Charset, Converter where Charset is a string naming a charset
@@ -233,11 +240,26 @@ finish_request(ReqData, Context) ->
 %% --------------------------------------------------------------------
 accept_content_json(ReqData, Context) ->
 	Content = wrq:req_body(ReqData),
+	{struct, Properties} = mochijson2:decode(Content),	
+	E = [convert({K,V}) || {K,V} <- Properties],
+	Entity = create(json, [{"id", wrq:disp_path(ReqData)}|E]),
 	{true, ReqData, Context}.
+
 accept_content_xml(ReqData, Context) ->
+	Content = wrq:req_body(ReqData),
 	{true, ReqData, Context}.
-accept_content_html(ReqData, Context) ->
-	{true, ReqData, Context}.
+
+provide_json_content(ReqData, Context) ->
+	case {{entity}}_db:find_by_id(wrq:disp_path(ReqData)) of
+		[] -> {error, ReqData, Context};
+		[Entity] -> {mochijson:encode({struct,[convert({K, V}) || {K,V} <- Entity#user.data]}), ReqData, Context}
+	end.
+
+provide_xml_content(ReqData, Context) ->
+	case {{entity}}_db:find_by_id(wrq:disp_path(ReqData)) of
+		[] -> {error, ReqData, Context};
+		Entity -> {Entity#{{entity}}.data, ReqData, Context}
+	end.
 
 to_html(ReqData, Context) ->
     {io_lib:format("<html><body>~s</body><html>", [erlang:iolist_to_binary("Hello Template")]), ReqData, Context}.
@@ -250,17 +272,28 @@ to_xml(ReqData, Context) ->
 %% --------------------------------------------------------------------
 hash_body(Body) -> 
 	mochihex:to_hex(binary_to_list(crypto:sha(Body))).
-create(Entity) ->
-	{{appid}}_db:create(Entity).
+create(json, Properties) ->
+	{{entity}}_db:create(json, Properties);
+create(xml, Entity) ->
+	{{entity}}_db:create(xml, Entity).
 update(Entity) ->
-	{{appid}}_db:update(Entity).
+	{{entity}}_db:update(Entity).
 delete(Id) ->
-	{{appid}}_db:delete(Id).
+	{{entity}}_db:delete(Id).
 find_by_id(Id) ->
-	{{appid}}_db:find_by_id(Id).
+	{{entity}}_db:find_by_id(Id).
+
+convert({Key, Value}) when is_list(Key), is_list(Value) ->
+	{list_to_atom(Key), list_to_binary(Value)};
+convert({Key, Value}) when is_binary(Key), is_binary(Value) ->
+	{binary_to_list(Key), binary_to_list(Value)}.
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------
 -include_lib("eunit/include/eunit.hrl").
 -ifdef(TEST).
+encode_test() ->
+	A = [{"forename", "ulf"}, {"surename", "angermann"}],
+	B = [convert({K, V}) || {K,V} <- A],
+	?assertEqual(<<"{\"forename\":\"ulf\",\"surename\":\"angermann\"}">>, erlang:iolist_to_binary(mochijson:encode({struct, B}))).
 -endif.

@@ -80,6 +80,7 @@ init([]) ->
 %% --------------------------------------------------------------------
 start() ->
 	{{entity}}_db:create_db(),
+	ensure_started(euuid),
 	ensure_started(crypto),
 	ensure_started(mnesia),
     ensure_started(webmachine),
@@ -95,6 +96,7 @@ start_link(_Type, _Args) ->
 %% --------------------------------------------------------------------
 start(_Type, _Args) ->
 	{{entity}}_db:create_db(),
+	ensure_started(euuid),
 	ensure_started(crypto),
 	ensure_started(mnesia),
     ensure_started(webmachine),	
