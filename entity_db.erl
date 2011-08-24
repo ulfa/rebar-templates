@@ -55,7 +55,7 @@ update(Entity) ->
 	ok.
 
 delete(Id) ->
-	mnesia:activity(transaction, fun() -> mnesia:delete({{entity}}, Id) end).
+	mnesia:activity(transaction, fun() -> mnesia:delete({{entity}}, Id, write) end).
 
 find_free_id(Id) ->
 	case find_by_id(Id) of

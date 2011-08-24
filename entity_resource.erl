@@ -154,14 +154,14 @@ process_post(ReqData, Context) ->
 % return tuples, then a 406 Not Acceptable will be sent.
 % 
 content_types_provided(ReqData, Context) ->
-    {[{"application/json", provide_json_content}],ReqData, Context}.
+    {[{"application/json", provide_json_content}, {"application/xml", provide_xml_content}],ReqData, Context}.
 %
 % This is used similarly to content_types_provided, except that it is for incoming 
 % resource representations -- for example, PUT requests. Handler functions usually 
 % want to use wrq:req_body(ReqData) to access the incoming request body.
 % 
 content_types_accepted(ReqData, Context) ->
-	{[{"application/json", accept_content_json}], ReqData, Context}.
+	{[{"application/json", accept_content_json}, {"application/xml", accept_content_xml}], ReqData, Context}.
 %
 % If this is anything other than the atom no_charset, it must be a list of pairs where 
 % each pair is of the form Charset, Converter where Charset is a string naming a charset
