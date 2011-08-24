@@ -23,7 +23,7 @@
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
--export([init/1, to_html/2, content_types_provided/2, allowed_methods/2, resource_exists/2]).
+-export([init/1, content_types_provided/2, allowed_methods/2, resource_exists/2]).
 -export([options/2, allow_missing_post/2, post_is_create/2, create_path/2]).
 -export([content_types_accepted/2, generate_etag/2]).
 -export([accept_content_json/2, accept_content_xml/2, provide_json_content/2, provide_xml_content/2]).
@@ -255,17 +255,13 @@ provide_json_content(ReqData, Context) ->
 	end.
 
 provide_xml_content(ReqData, Context) ->
-	case {{entity}}_db:find_by_id(wrq:disp_path(ReqData)) of
+	case user_db:find_by_id(wrq:disp_path(ReqData)) of
 		[] -> {error, ReqData, Context};
-		Entity -> {Entity#{{entity}}.data, ReqData, Context}
+		[Entity] -> A = {user, [convert(xml, {K, V}) || {K, V} <- Entity#user.data]},
+					Xml = lists:flatten(xmerl:export_simple_content([A], xmerl_xml)),
+					{iolist_to_binary([<<X/utf8>> || X <- Xml]), ReqData, Context}
 	end.
 
-to_html(ReqData, Context) ->
-    {io_lib:format("<html><body>~s</body><html>", [erlang:iolist_to_binary("Hello Template")]), ReqData, Context}.
-to_json(ReqData, Context) ->
-	{undefined,  ReqData, Context}.
-to_xml(ReqData, Context) ->
-	{undefined,  ReqData, Context}.
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
@@ -284,6 +280,8 @@ convert({Key, Value}) when is_list(Key), is_list(Value) ->
 	{list_to_atom(Key), list_to_binary(Value)};
 convert({Key, Value}) when is_binary(Key), is_binary(Value) ->
 	{binary_to_list(Key), binary_to_list(Value)}.
+convert(xml, {Key, Value}) ->
+	{list_to_atom(Key), [Value]}.
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------
@@ -293,4 +291,10 @@ encode_test() ->
 	A = [{"forename", "ulf"}, {"surename", "angermann"}],
 	B = [convert({K, V}) || {K,V} <- A],
 	?assertEqual(<<"{\"forename\":\"ulf\",\"surename\":\"angermann\"}">>, erlang:iolist_to_binary(mochijson:encode({struct, B}))).
+
+to_xml_test() ->
+	A = [{"forename", "ulf"}, {"surename", "angermann"}],
+	B = [convert(xml, {K, V}) || {K, V} <- A],
+	lists:flatten(xmerl:export_simple_content([{user, B}], xmerl_xml)).
+
 -endif.
