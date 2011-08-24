@@ -23,9 +23,9 @@
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
--export([init/1, content_types_provided/2, allowed_methods/2, resource_exists/2]).
--export([options/2, allow_missing_post/2, post_is_create/2, create_path/2]).
--export([content_types_accepted/2, generate_etag/2]).
+-export([init/1, content_types_provided/2, allowed_methods/2, resource_exists/2, finish_request/2]).
+-export([options/2, allow_missing_post/2, post_is_create/2, create_path/2, last_modified/2]).
+-export([content_types_accepted/2, generate_etag/2, delete_resource/2, delete_completed/2]).
 -export([accept_content_json/2, accept_content_xml/2, provide_json_content/2, provide_xml_content/2]).
 %% --------------------------------------------------------------------
 %% Include files
