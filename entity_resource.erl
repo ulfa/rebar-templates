@@ -35,7 +35,7 @@
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
--record(context, {body}).
+-record(context, {lastmodified, body}).
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
@@ -48,8 +48,7 @@ init(_Config) ->
 resource_exists(ReqData, Context) ->
 	case {{entity}}_db:find_by_id(wrq:disp_path(ReqData)) of 
 		[] -> {false, ReqData, Context};
-		[Entity] -> Context#context{body=Entity#{{entity}}.data}, 
-				 {true, ReqData, Context}
+		[Entity] -> {true, ReqData, {true, ReqData, Context#context{lastmodified = Entity#user.lastmodified, body=Entity#user.data}}}
 	end.
 %
 % true, if the service is available
@@ -229,7 +228,7 @@ expires(ReqData, Context) ->
 % and for comparison in conditional requests.
 %
 generate_etag(ReqData, Context) ->
-	{undefined, ReqData, Context}.
+	{mochihex:to_hex(erlang:phash2(Context#context.body)), ReqData, Context}.
 % This function, if exported, is called just before the final response is constructed and sent. 
 % The Result is ignored, so any effect of this function must be by returning a modified ReqData 
 %
@@ -270,8 +269,6 @@ to_xml(ReqData, Context) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-hash_body(Body) -> 
-	mochihex:to_hex(binary_to_list(crypto:sha(Body))).
 create(json, Properties) ->
 	{{entity}}_db:create(json, Properties);
 create(xml, Entity) ->
