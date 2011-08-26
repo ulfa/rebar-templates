@@ -25,8 +25,9 @@
 %% --------------------------------------------------------------------
 -export([init/1, content_types_provided/2, allowed_methods/2, resource_exists/2, finish_request/2]).
 -export([options/2, allow_missing_post/2, post_is_create/2, create_path/2, last_modified/2]).
--export([content_types_accepted/2, generate_etag/2, delete_resource/2, delete_completed/2]).
+-export([content_types_accepted/2, generate_etag/2, delete_resource/2, delete_completed/2, is_conflict/2]).
 -export([accept_content_json/2, accept_content_xml/2, provide_json_content/2, provide_xml_content/2]).
+-export([is_authorized/2]).
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
@@ -41,7 +42,7 @@
 %% --------------------------------------------------------------------
 init(_Config) -> 
 	%%{ok, #context{}}.
-	{ {trace, "/tmp"}, #context{}}.
+	{ {trace, "/tmp"}, #context{lastmodified=erlang:universaltime(), body=[]} }.
 %
 % Returning non-true values will result in 404 Not Found.
 % 
@@ -238,30 +239,27 @@ finish_request(ReqData, Context) ->
 %%% Additional functions
 %% --------------------------------------------------------------------
 accept_content_json(ReqData, Context) ->
-	Content = wrq:req_body(ReqData),
-	{struct, Properties} = mochijson2:decode(Content),	
-	E = [convert({K,V}) || {K,V} <- Properties],
-	Entity = create(json, [{"id", wrq:disp_path(ReqData)}|E]),
-	{true, ReqData, Context}.
+	Body = wrq:req_body(ReqData),
+	{struct, Properties} = mochijson2:decode(Body),	
+	E = [{"id", wrq:disp_path(ReqData)}|[convert({K,V}) || {K,V} <- Properties]],
+	create(json, E),
+	{true, wrq:set_resp_body(to_json(E), ReqData), Context}.
 
 accept_content_xml(ReqData, Context) ->
-	Content = wrq:req_body(ReqData),
+	Body = wrq:req_body(ReqData),
 	{true, ReqData, Context}.
 
 provide_json_content(ReqData, Context) ->
-	case {{entity}}_db:find_by_id(wrq:disp_path(ReqData)) of
+	case user_db:find_by_id(wrq:disp_path(ReqData)) of
 		[] -> {error, ReqData, Context};
-		[Entity] -> {mochijson:encode({struct,[convert({K, V}) || {K,V} <- Entity#user.data]}), ReqData, Context}
+		[Entity] -> {to_json(Entity#user.data), ReqData, Context}
 	end.
 
 provide_xml_content(ReqData, Context) ->
 	case user_db:find_by_id(wrq:disp_path(ReqData)) of
 		[] -> {error, ReqData, Context};
-		[Entity] -> A = {user, [convert(xml, {K, V}) || {K, V} <- Entity#user.data]},
-					Xml = lists:flatten(xmerl:export_simple_content([A], xmerl_xml)),
-					{iolist_to_binary([<<X/utf8>> || X <- Xml]), ReqData, Context}
+		[Entity] -> {to_xml(Entity#user.data), ReqData, Context}
 	end.
-
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
@@ -282,6 +280,12 @@ convert({Key, Value}) when is_binary(Key), is_binary(Value) ->
 	{binary_to_list(Key), binary_to_list(Value)}.
 convert(xml, {Key, Value}) ->
 	{list_to_atom(Key), [Value]}.
+to_json(Body) ->
+	mochijson:encode({struct,[convert({K, V}) || {K,V} <- Body]}).
+to_xml(Body) ->
+	A = {user, [convert(xml, {K, V}) || {K, V} <- Body]},
+	Xml = lists:flatten(xmerl:export_simple_content([A], xmerl_xml)),
+	iolist_to_binary([<<X/utf8>> || X <- Xml]).
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------
