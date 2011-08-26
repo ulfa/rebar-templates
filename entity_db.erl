@@ -18,7 +18,7 @@
 %%% Description : 
 %%% Created : 
 %%% -------------------------------------------------------------------
--module({{entity}}_db).
+-module({{appid}}_db).
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
@@ -46,7 +46,7 @@ create(json, Properties) ->
 	Entity;
 
 create(xml, Entity) ->
-	mnesia:activity(transaction, fun() -> mnesia:write({{entity}}, Entity, write) end);
+	mnesia:activity(transaction, fun() -> mnesia:write({{entity}}, Entity, write) end).
 
 find_by_id(Id) ->
 	mnesia:activity(transaction, fun() ->mnesia:read({{entity}}, Id)  end).

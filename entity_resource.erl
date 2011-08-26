@@ -36,20 +36,20 @@
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
--record(context, {lastmodified, body}).
+-record(context, {entity}).
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
 init(_Config) -> 
 	%%{ok, #context{}}.
-	{ {trace, "/tmp"}, #context{lastmodified=erlang:universaltime(), body=[]} }.
+	{ {trace, "/tmp"}, #context{} }.
 %
 % Returning non-true values will result in 404 Not Found.
 % 
 resource_exists(ReqData, Context) ->
-	case {{entity}}_db:find_by_id(wrq:disp_path(ReqData)) of 
+	case {{appid}}_db:find_by_id(wrq:disp_path(ReqData)) of 
 		[] -> {false, ReqData, Context};
-		[Entity] -> {true, ReqData, {true, ReqData, Context#context{lastmodified = Entity#user.lastmodified, body=Entity#user.data}}}
+		[Entity] -> {true, ReqData, Context#context{entity = Entity}}
 	end.
 %
 % true, if the service is available
@@ -135,9 +135,9 @@ create_path(ReqData, Context) ->
 	case wrq:get_req_header("slug", ReqData) of
         undefined -> {erlang:integer_to_list(euuid:random()), ReqData, Context};
         Slug ->
-            case {{entity}}_db:find_by_id(Slug) of
+            case {{appid}}_db:find_by_id(Slug) of
 				[] -> {Slug, ReqData, Context};
-                _  -> { {{entity}}_db:find_free_id(Slug), ReqData, Context}
+                _  -> { {{appid}}_db:find_free_id(Slug), ReqData, Context}
             end
     	end.
 %
@@ -155,7 +155,8 @@ process_post(ReqData, Context) ->
 % return tuples, then a 406 Not Acceptable will be sent.
 % 
 content_types_provided(ReqData, Context) ->
-    {[{"application/json", provide_json_content}, {"application/xml", provide_xml_content}],ReqData, Context}.
+   %% {[{"application/json", provide_json_content}, {"application/xml", provide_xml_content}],ReqData, Context}.
+	 {[{"application/json", provide_json_content}],ReqData, Context}.
 %
 % This is used similarly to content_types_provided, except that it is for incoming 
 % resource representations -- for example, PUT requests. Handler functions usually 
@@ -201,7 +202,6 @@ is_conflict(ReqData, Context) ->
 multiple_choices(ReqData, Context) ->
 	{false, ReqData, Context}.
 
-
 previously_existed(ReqData, Context) ->
 	{false, ReqData, Context}.
 %
@@ -217,8 +217,8 @@ moved_temporarily(ReqData, Context) ->
 %
 % undefined | YYYY,MM,DD, Hour,Min,Sec
 %
-last_modified(ReqData, Context) ->
-	{undefined, ReqData, Context}.
+last_modified(ReqData,#context{entity = Entity} = Context) ->
+	{Entity#user.lastmodified, ReqData, Context}.
 %
 % undefined | YYYY,MM,DD, Hour,Min,Sec 
 %
@@ -228,8 +228,8 @@ expires(ReqData, Context) ->
 % If this returns a value, it will be used as the value of the ETag header 
 % and for comparison in conditional requests.
 %
-generate_etag(ReqData, Context) ->
-	{mochihex:to_hex(erlang:phash2(Context#context.body)), ReqData, Context}.
+generate_etag(ReqData,  #context{entity = Entity} = Context) ->
+	{mochihex:to_hex(erlang:phash2(Entity#user.data)), ReqData, Context}.
 % This function, if exported, is called just before the final response is constructed and sent. 
 % The Result is ignored, so any effect of this function must be by returning a modified ReqData 
 %
@@ -242,7 +242,11 @@ accept_content_json(ReqData, Context) ->
 	Body = wrq:req_body(ReqData),
 	{struct, Properties} = mochijson2:decode(Body),	
 	E = [{"id", wrq:disp_path(ReqData)}|[convert({K,V}) || {K,V} <- Properties]],
-	create(json, E),
+	case Context#context.entity of
+		undefined -> create(json, E);
+		Entity -> Entity#{{entity}}{data = E},
+				  update(Entity)
+	end,
 	{true, wrq:set_resp_body(to_json(E), ReqData), Context}.
 
 accept_content_xml(ReqData, Context) ->
@@ -250,13 +254,13 @@ accept_content_xml(ReqData, Context) ->
 	{true, ReqData, Context}.
 
 provide_json_content(ReqData, Context) ->
-	case user_db:find_by_id(wrq:disp_path(ReqData)) of
+	case {{appid}}_db:find_by_id(wrq:disp_path(ReqData)) of
 		[] -> {error, ReqData, Context};
 		[Entity] -> {to_json(Entity#user.data), ReqData, Context}
 	end.
 
 provide_xml_content(ReqData, Context) ->
-	case user_db:find_by_id(wrq:disp_path(ReqData)) of
+	case {{appid}}_db:find_by_id(wrq:disp_path(ReqData)) of
 		[] -> {error, ReqData, Context};
 		[Entity] -> {to_xml(Entity#user.data), ReqData, Context}
 	end.
@@ -264,15 +268,15 @@ provide_xml_content(ReqData, Context) ->
 %%% Internal functions
 %% --------------------------------------------------------------------
 create(json, Properties) ->
-	{{entity}}_db:create(json, Properties);
+	{{appid}}_db:create(json, Properties);
 create(xml, Entity) ->
-	{{entity}}_db:create(xml, Entity).
+	{{appid}}_db:create(xml, Entity).
 update(Entity) ->
-	{{entity}}_db:update(Entity).
+	{{appid}}_db:update(Entity).
 delete(Id) ->
-	{{entity}}_db:delete(Id).
+	{{appid}}_db:delete(Id).
 find_by_id(Id) ->
-	{{entity}}_db:find_by_id(Id).
+	{{appid}}_db:find_by_id(Id).
 
 convert({Key, Value}) when is_list(Key), is_list(Value) ->
 	{list_to_atom(Key), list_to_binary(Value)};
@@ -283,7 +287,7 @@ convert(xml, {Key, Value}) ->
 to_json(Body) ->
 	mochijson:encode({struct,[convert({K, V}) || {K,V} <- Body]}).
 to_xml(Body) ->
-	A = {user, [convert(xml, {K, V}) || {K, V} <- Body]},
+	A = { {{entity}}, [convert(xml, {K, V}) || {K, V} <- Body]},
 	Xml = lists:flatten(xmerl:export_simple_content([A], xmerl_xml)),
 	iolist_to_binary([<<X/utf8>> || X <- Xml]).
 %% --------------------------------------------------------------------

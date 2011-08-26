@@ -2,7 +2,6 @@
 {template, "rebar.config", "rebar.config"}.
 {template, "wm_service.app.src", "src/{{appid}}_service.app.src"}.
 {template, "dispatch.conf", "priv/dispatch.conf"}.
-{template, "wm_resource.erl", "src/{{appid}}_resource.erl"}.
 {template, "wm_service.erl", "src/{{appid}}_service.erl"}.
 {template, "start.sh", "start.sh"}.
 {template, "test.sh", "test.sh"}.
@@ -12,5 +11,5 @@
 {template, "install.sh", "install.sh"}.
 {template, "common_SUITE.erl", "test/{{appid}}_SUITE.erl"}.
 {template, "entity_resource.erl", "src/{{appid}}_resource.erl"}.
-{template, "entity_db.erl", "src/{{entity}}_db.erl"}.
+{template, "entity_db.erl", "src/{{appid}}_db.erl"}.
 {template, "wm_service.hrl", "include/{{appid}}.hrl"}.
