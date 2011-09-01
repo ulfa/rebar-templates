@@ -218,7 +218,7 @@ moved_temporarily(ReqData, Context) ->
 % undefined | YYYY,MM,DD, Hour,Min,Sec
 %
 last_modified(ReqData,#context{entity = Entity} = Context) ->
-	{Entity#user.lastmodified, ReqData, Context}.
+	{Entity#{{entity}}.lastmodified, ReqData, Context}.
 %
 % undefined | YYYY,MM,DD, Hour,Min,Sec 
 %
@@ -229,7 +229,7 @@ expires(ReqData, Context) ->
 % and for comparison in conditional requests.
 %
 generate_etag(ReqData,  #context{entity = Entity} = Context) ->
-	{mochihex:to_hex(erlang:phash2(Entity#user.data)), ReqData, Context}.
+	{mochihex:to_hex(erlang:phash2(Entity#{{entity}}.data)), ReqData, Context}.
 % This function, if exported, is called just before the final response is constructed and sent. 
 % The Result is ignored, so any effect of this function must be by returning a modified ReqData 
 %
@@ -256,13 +256,13 @@ accept_content_xml(ReqData, Context) ->
 provide_json_content(ReqData, Context) ->
 	case {{appid}}_db:find_by_id(wrq:disp_path(ReqData)) of
 		[] -> {error, ReqData, Context};
-		[Entity] -> {to_json(Entity#user.data), ReqData, Context}
+		[Entity] -> {to_json(Entity#{{entity}}.data), ReqData, Context}
 	end.
 
 provide_xml_content(ReqData, Context) ->
 	case {{appid}}_db:find_by_id(wrq:disp_path(ReqData)) of
 		[] -> {error, ReqData, Context};
-		[Entity] -> {to_xml(Entity#user.data), ReqData, Context}
+		[Entity] -> {to_xml(Entity#{{entity}}.data), ReqData, Context}
 	end.
 %% --------------------------------------------------------------------
 %%% Internal functions
