@@ -1,0 +1,2 @@
+{variables, [{thing, "mything"}, {author, "Ulf Angermann"}, {email, "uaforum1@googlemail.com"}]}.
+{template, "thing.erl", "src/{{thing}}.erl"}.
