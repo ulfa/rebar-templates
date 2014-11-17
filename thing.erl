@@ -1,4 +1,4 @@
-%% Copyright 2010 {{author}}
+%% Copyright 2014 {{author}}
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -34,13 +34,12 @@ stop(Config) ->
     Config.
 
 handle_msg([Node ,Sensor, Id, Time, Body] = Msg, Config, Module_config) ->
-    lager:info("~p got message : ~p", [?MODULE, Msg),
+    lager:info("~p got message : ~p", [?MODULE, Msg]),
     Config;
-    
-handle_msg(Unknown_message, Config, Module_config) ->
-    lager:warning("~p got the wrong message : ~p", [?MODULE, Unknown_message),
-    Config.
 
+handle_msg(Unknown_message, Config, Module_config) ->
+    lager:warning("~p got the wrong message : ~p", [?MODULE, Unknown_message]),
+    Config.
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------

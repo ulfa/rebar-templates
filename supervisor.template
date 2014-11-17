@@ -1,0 +1,2 @@
+{variables, [{id, "mySupervisor"}, {author, "Ulf Angermann"}, {date, ""}, {email, "uaforum1@googlemail.com"}]}.
+{template, "supervisor.erl", "src/{{id}}.erl"}.
