@@ -1,0 +1,13 @@
+{application, {{appid}},
+ [
+  {description, ""},
+  {vsn, git},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  janga_core
+                 ]},
+  {mod, { {{appid}}_app, []}},
+  {env, []}
+ ]}.

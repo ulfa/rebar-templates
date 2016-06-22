@@ -1,0 +1,51 @@
+PROJECT = {{appid}}
+DIALYZER = dialyzer
+REBAR = rebar
+DATE = `date +%Y-%m-%d`
+CRASH_DIR = ../../crasher
+
+
+
+all: app
+
+tar: app 
+	cd rel; tar cvf $(REPO)/$(PROJECT).$(VERSION).tar $(PROJECT)
+
+tarall: app 
+	cd ..; tar cf $(REPOSRC)/$(PROJECT).src.$(VERSION).tar $(PROJECT) --exclude log/* --exclude apps/horst/priv/config --exclude deps/gpio/priv/gpio_drv.so --exclude deps/syslog/priv/syslog_drv.so --exclude apps/roni/priv/config/accounts.conf --exclude data --exclude .git
+
+cp: tar
+	 cd ..;scp $(REPOSRC)/$(PROJECT).$(VERSION).tar $(USR)@$(HOST):$(TARGET)
+ 
+clean-release: clean-projects
+	rm -rf $(REPO)/$(PROJECT)
+
+app: deps
+	@$(REBAR) compile
+
+deps:
+	@$(REBAR) get-deps
+
+clean:
+	@$(REBAR) clean
+	rm -f test/*.beam
+	rm -f erl_crash.dump
+	rm -f log/*
+
+tests: clean app eunit ct
+
+eunit:
+	@$(REBAR) eunit skip_deps=true
+
+cp_core:
+	cp -R ../../janga/apps/janga_core/src/*.erl ./deps/janga_core/src/
+	cp -R ../../janga/apps/janga_core/src/*.src ./deps/janga_core/src/
+	cp -R ../../janga/apps/janga_core/include/*.hrl ./deps/janga_core/include
+	cp -R ../../janga/deps/janga_core/rebar.config ./deps/janga_core/rebar.config
+	
+docs:
+	@$(REBAR) doc skip_deps=true
+
+cp_crash: 
+	mkdir -p $(CRASH_DIR)/$(HOST)/$(DATE)
+	scp $(USR)@$(HOST):$(TARGET)/$(PROJECT)/erl_crash.dump $(CRASH_DIR)/$(HOST)/$(DATE)

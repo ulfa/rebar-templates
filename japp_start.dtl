@@ -1,0 +1,4 @@
+{% extends "{{appid}}_base.dtl" %}
+<title>{% block title %}{% endblock %}</title>
+{% block body %}
+{% endblock %}

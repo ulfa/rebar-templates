@@ -1,0 +1,13 @@
+.DS_Store
+.ct_dialyzer.plt
+.rebar
+erl_crash.dump
+log/
+ebin/
+ct_test/
+.eunit/
+deps/
+backup/
+variables-*
+Mnesia.*
+data
